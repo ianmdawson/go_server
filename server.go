@@ -22,7 +22,7 @@ func main() {
 		config.LoadEnv("")
 	}
 
-	// http.HandleFunc("/api/comments", viewHandler)
+	http.HandleFunc("/api/view", viewHandler)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
 	fmt.Printf("Getting ready to serve on port: %s", port)

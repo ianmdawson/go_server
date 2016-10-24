@@ -1,5 +1,5 @@
-# go_server (template)
-This is/will be a simple go http server template.
+# go_server (playground)
+This is/will be a simple go http server.
 
 # Installation
 ```
