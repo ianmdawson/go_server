@@ -9,10 +9,10 @@ import (
 // LoadEnv loads a json configuration file
 func LoadEnv(path string) error {
 	if path == "" {
-		path = "../.env"
+		path = ".env"
 	}
 
-	return gotenv.Load(path, "credentials")
+	return gotenv.Load(path)
 }
 
 // IsProductionEnvironment returns true if environment is production
