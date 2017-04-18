@@ -7,7 +7,26 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 )
+
+type stop struct {
+	StopID        json.Number `json:"StopId"`
+	Name          string      `json:"Name"`
+	Latitude      json.Number `json:"Latitude"`
+	Longitude     json.Number `json:"Longitude"`
+	ScheduledTime string      `json:"ScheduledTime"`
+}
+
+type Prediction struct {
+	StopID                  json.Number `json:"StopId"`
+	TripID                  json.Number `json:"TripId"`
+	VehicleID               json.Number `json:"VehicleId"`
+	RouteName               string      `json:"RouteName"`
+	PredictedDelayInSeconds json.Number `json:"PredictedDelayInSeconds"`
+	PredictedDeparture      string      `json:"PredictedDeparture"`
+	PredictionDateTime      string      `json:"PredictionDateTime"`
+}
 
 func appendAuthToURL(URLPrefix string, testToken *string) (*url.URL, error) {
 	var actransitToken string
@@ -45,14 +64,6 @@ func httpRequest(u url.URL) (*[]byte, error) {
 	return &body, nil
 }
 
-type stop struct {
-	StopID        json.Number `json:"StopId"`
-	Name          string      `json:"Name"`
-	Latitude      json.Number `json:"Latitude"`
-	Longitude     json.Number `json:"Longitude"`
-	ScheduledTime string      `json:"ScheduledTime"`
-}
-
 // GetAllStops retrieves all available stops
 func GetAllStops(URL string) (*[]stop, error) {
 	if URL == "" {
@@ -79,7 +90,13 @@ func GetAllStops(URL string) (*[]stop, error) {
 }
 
 // GetStopPredictions retrieves predictions for a stop by ID
-func GetStopPredictions(stopID string, URL string) (*[]stop, error) {
+func GetStopPredictions(stopID string, URL string) (*[]Prediction, error) {
+	regex := regexp.MustCompile("^[0-9]+")
+	match := regex.FindAllString(stopID, 1)
+	if match == nil {
+		return nil, fmt.Errorf("Invalid stop ID: %s", stopID)
+	}
+
 	if URL == "" {
 		URL = fmt.Sprintf("https://api.actransit.org/transit/stops/%s/predictions", stopID)
 	}
@@ -94,17 +111,17 @@ func GetStopPredictions(stopID string, URL string) (*[]stop, error) {
 		return nil, err
 	}
 
-	var stops []stop
-	err = json.Unmarshal(*responseBody, &stops)
+	var predictions []Prediction
+	err = json.Unmarshal(*responseBody, &predictions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &stops, nil
+	return &predictions, nil
 }
 
 // UsefulStops a list of StopIDs
 var UsefulStops = []uint16{
-	1234,
-	5678,
+	58123,
+	52246,
 }

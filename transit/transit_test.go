@@ -14,6 +14,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAppendTransitToken(t *testing.T) {
+	testURL := "https://www.example.com/test"
+	testToken := "1234"
+
+	u, err := appendAuthToURL(testURL, &testToken)
+	if err != nil {
+		t.Fatalf("Expected no error, but got: %s", err)
+	}
+	expectedURL, _ := url.Parse("https://www.example.com/test?token=1234")
+	if u == expectedURL {
+		t.Fatalf("Expected url to be %s, but got: %s", expectedURL, u)
+	}
+}
+
 // It creates an http client and sends a request, receives a response
 func TestHTTPClient_Success(t *testing.T) {
 	fakeResponse := map[string]string{"fakeData": "fakety"}
@@ -128,16 +142,54 @@ func TestGetAllStopsSuccess(t *testing.T) {
 	assert.Equal(t, expectedStop, actualStops[0], "")
 }
 
-func TestAppendTransitToken(t *testing.T) {
-	testURL := "https://www.example.com/test"
-	testToken := "1234"
+func TestGetStopPredictions_Success(t *testing.T) {
+	setUp()
+	fakeResponse := []map[string]string{
+		map[string]string{
+			"StopId":                  "55765",
+			"TripId":                  "5340688",
+			"VehicleId":               "5019",
+			"RouteName":               "80",
+			"PredictedDelayInSeconds": "-240",
+			"PredictedDeparture":      "2017-04-17T22:30:00",
+			"PredictionDateTime":      "2017-04-17T22:28:58",
+		},
+		map[string]string{
+			"StopId":                  "55765",
+			"TripId":                  "5340689",
+			"VehicleId":               "5117",
+			"RouteName":               "80",
+			"PredictedDelayInSeconds": "-1860",
+			"PredictedDeparture":      "2017-04-17T22:43:00",
+			"PredictionDateTime":      "2017-04-17T22:28:48",
+		},
+	}
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(fakeResponse)
+		return
+	}))
+	defer s.Close()
+	fakeURL, _ := url.Parse(s.URL)
 
-	u, err := appendAuthToURL(testURL, &testToken)
-	if err != nil {
-		t.Fatalf("Expected no error, but got: %s", err)
+	predictions, err := GetStopPredictions("55765", fakeURL.String())
+	assert.NoError(t, err, "")
+
+	actualPredictions := *predictions
+	expectedPrediction := Prediction{
+		StopID:                  "55765",
+		TripID:                  "5340689",
+		VehicleID:               "5117",
+		RouteName:               "80",
+		PredictedDelayInSeconds: "-1860",
+		PredictedDeparture:      "2017-04-17T22:43:00",
+		PredictionDateTime:      "2017-04-17T22:28:48",
 	}
-	expectedURL, _ := url.Parse("https://www.example.com/test?token=1234")
-	if u == expectedURL {
-		t.Fatalf("Expected url to be %s, but got: %s", expectedURL, u)
-	}
+	assert.Equal(t, expectedPrediction, actualPredictions[1], "")
+}
+
+func TestGetStopPredictions_RejectsNonNumberStopIDs(t *testing.T) {
+	_, err := GetStopPredictions("zomgNotNumbers", "someurl")
+	assert.EqualError(t, err, "Invalid stop ID: zomgNotNumbers", "")
 }
