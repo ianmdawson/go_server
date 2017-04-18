@@ -1,5 +1,10 @@
 # go_server (playground)
-This is/will be a simple go http server.
+This is/will be a simple go http server playground.
+
+# Running the server
+```
+go run server.go
+```
 
 # Installation
 ```
