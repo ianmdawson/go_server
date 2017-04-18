@@ -64,7 +64,31 @@ func GetAllStops(URL string) (*[]stop, error) {
 		return nil, err
 	}
 
-	fmt.Println("getting stops")
+	responseBody, err := httpRequest(*stopsURL)
+	if err != nil {
+		return nil, err
+	}
+
+	var stops []stop
+	err = json.Unmarshal(*responseBody, &stops)
+	if err != nil {
+		return nil, err
+	}
+
+	return &stops, nil
+}
+
+// GetStopPredictions retrieves predictions for a stop by ID
+func GetStopPredictions(stopID string, URL string) (*[]stop, error) {
+	if URL == "" {
+		URL = fmt.Sprintf("https://api.actransit.org/transit/stops/%s/predictions", stopID)
+	}
+
+	stopsURL, err := appendAuthToURL(URL, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	responseBody, err := httpRequest(*stopsURL)
 	if err != nil {
 		return nil, err

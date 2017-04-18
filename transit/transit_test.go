@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/ianmdawson/go_server/config"
+	"github.com/stretchr/testify/assert"
 )
 
 // It creates an http client and sends a request, receives a response
@@ -115,22 +116,16 @@ func TestGetAllStopsSuccess(t *testing.T) {
 		t.Fatalf("Expected no error, but got: %s", err)
 	}
 
-	// expectedStop := stop{
-	// 	StopID:        json.Number(58123),
-	// 	Name:          "3rd St:Santa Clara Av",
-	// 	Latitude:      "37.7732681",
-	// 	Longitude:     "-122.2882275",
-	// 	ScheduledTime: "null",
-	// }
-
-	if stops == nil {
-		t.Fatalf("Expected stops to exist, but got: %v", stops)
+	expectedStop := stop{
+		StopID:        "58123",
+		Name:          "3rd St:Santa Clara Av",
+		Latitude:      "37.7732681",
+		Longitude:     "-122.2882275",
+		ScheduledTime: "null",
 	}
 
-	// actualStops := *stops
-	// if actualStops[0] != expectedStop {
-	// 	t.Fatalf("Expected stop[0] to be %v but got: %v", expectedStop, actualStops[1])
-	// }
+	actualStops := *stops
+	assert.Equal(t, expectedStop, actualStops[0], "")
 }
 
 func TestAppendTransitToken(t *testing.T) {

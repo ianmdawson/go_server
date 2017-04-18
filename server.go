@@ -19,7 +19,7 @@ func fourOhFour(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-func stopsHandler(w http.ResponseWriter, r *http.Request) {
+func allStopsHandler(w http.ResponseWriter, r *http.Request) {
 	stops, err := transit.GetAllStops("")
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to retrieve AC Transit stops: "+err.Error(), http.StatusBadGateway)
@@ -34,6 +34,7 @@ func stopsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v", stops)
 }
 
+// Log logging middleware
 func Log(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL)
@@ -53,7 +54,7 @@ func main() {
 	http.HandleFunc("/api/view", viewHandler)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
 
-	http.HandleFunc("/transit", stopsHandler)
+	http.HandleFunc("/transit", allStopsHandler)
 
 	fmt.Printf("Getting ready to serve on port: %s", port)
 	http.ListenAndServe(":"+port, Log(http.DefaultServeMux))
