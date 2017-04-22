@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppendTransitToken(t *testing.T) {
+func TestAppendAuthToURL_Success(t *testing.T) {
 	testURL := "https://www.example.com/test"
 	testToken := "1234"
 
@@ -23,9 +23,16 @@ func TestAppendTransitToken(t *testing.T) {
 		t.Fatalf("Expected no error, but got: %s", err)
 	}
 	expectedURL, _ := url.Parse("https://www.example.com/test?token=1234")
-	if u == expectedURL {
-		t.Fatalf("Expected url to be %s, but got: %s", expectedURL, u)
-	}
+	assert.Equal(t, expectedURL, u)
+}
+
+func TestAppendAuthToURL_ReturnsAnErrorForInvalidURLs(t *testing.T) {
+	testURL := "badurl"
+	testToken := "1234"
+
+	u, err := appendAuthToURL(testURL, &testToken)
+	assert.Error(t, err)
+	assert.Nil(t, u)
 }
 
 // It creates an http client and sends a request, receives a response

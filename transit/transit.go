@@ -37,12 +37,12 @@ func appendAuthToURL(URLPrefix string, testToken *string) (*url.URL, error) {
 	}
 
 	var tokenSuffix = "?token=" + actransitToken
-	u, err := url.Parse(URLPrefix + tokenSuffix)
+	_url, err := url.ParseRequestURI(URLPrefix + tokenSuffix)
 	if err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return _url, nil
 }
 
 // super basic client
