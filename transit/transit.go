@@ -51,13 +51,16 @@ func (prediction *Prediction) IsDelayed() bool {
 
 func getTimeFromACTransit(acTransitTime string) (*time.Time, error) {
 	t, err := time.Parse("2006-01-02T15:04:05", acTransitTime)
+	if err != nil {
+		return nil, err
+	}
 	loc, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		return nil, err
 	}
 
-	timeInLocation := t.In(loc)
-	return &timeInLocation, err
+	timeInPST := t.In(loc)
+	return &timeInPST, err
 }
 
 func formatTimeForACTransit(t time.Time) string {
