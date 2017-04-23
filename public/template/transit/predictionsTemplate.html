@@ -1,0 +1,16 @@
+<h1>Stop {{.Title}}</h1>
+{{ range $prediction := .Predictions }}
+  <!-- <table> -->
+    <h2>Next arrival of the {{$prediction.RouteName}} line: </h2>
+      {{ if $prediction.IsDelayed }}
+        <text class="delay" style="color:red;">Delayed: {{ $prediction.PredictedDelayInSeconds }}</text>
+      {{ end }}
+      {{ $prediction.TimeUntilPredictedDeparture }}
+  <!-- </table> -->
+{{ end }}
+
+
+<!-- <form action="/save/{{.Title}}" method="POST">
+<div><textarea name="body" rows="20" cols="80">{{printf "%s" .Body}}</textarea></div>
+<div><input type="submit" value="Save"></div>
+</form> -->

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ianmdawson/go_server/config"
 	"github.com/stretchr/testify/assert"
@@ -77,10 +78,6 @@ func TestHTTPClientErrorsIfServerErrors(t *testing.T) {
 	}
 }
 
-func setUp() {
-	config.LoadEnv("")
-}
-
 func TestGetAllStopsErrorsIfServerErrors(t *testing.T) {
 	setUp()
 	fakeResponse := `A valid API token is required to use the AC Transit API.`
@@ -137,7 +134,7 @@ func TestGetAllStopsSuccess(t *testing.T) {
 		t.Fatalf("Expected no error, but got: %s", err)
 	}
 
-	expectedStop := stop{
+	expectedStop := Stop{
 		StopID:        "58123",
 		Name:          "3rd St:Santa Clara Av",
 		Latitude:      "37.7732681",
@@ -181,22 +178,69 @@ func TestGetStopPredictions_Success(t *testing.T) {
 	fakeURL, _ := url.Parse(s.URL)
 
 	predictions, err := GetStopPredictions("55765", fakeURL.String())
-	assert.NoError(t, err, "")
+	assert.NoError(t, err)
 
+	expectedPredictedDeparture := "2017-04-17T22:43:00"
+	expectedPredictionDateTime := "2017-04-17T22:28:48"
+	expectedPrediction := getTestPrediction(&expectedPredictedDeparture, &expectedPredictionDateTime)
 	actualPredictions := *predictions
-	expectedPrediction := Prediction{
-		StopID:                  "55765",
-		TripID:                  "5340689",
-		VehicleID:               "5117",
-		RouteName:               "80",
-		PredictedDelayInSeconds: "-1860",
-		PredictedDeparture:      "2017-04-17T22:43:00",
-		PredictionDateTime:      "2017-04-17T22:28:48",
-	}
 	assert.Equal(t, expectedPrediction, actualPredictions[1], "")
 }
 
 func TestGetStopPredictions_RejectsNonNumberStopIDs(t *testing.T) {
 	_, err := GetStopPredictions("zomgNotNumbers", "someurl")
-	assert.EqualError(t, err, "Invalid stop ID: zomgNotNumbers", "")
+	assert.EqualError(t, err, "Invalid stop ID: zomgNotNumbers")
+}
+
+func TestPredictionTimeUntilPredictedDeparture(t *testing.T) {
+	testPrediction := getTestPrediction(nil, nil)
+	timeUntil, err := testPrediction.TimeUntilPredictedDeparture()
+	assert.NoError(t, err)
+	expectedDurationMax := time.Minute * 15
+
+	isTimeUntilAsExpected := false
+	if *timeUntil <= expectedDurationMax {
+		isTimeUntilAsExpected = true
+	}
+
+	assert.True(t, isTimeUntilAsExpected)
+}
+
+func TestIsDelayed(t *testing.T) {
+	testPrediction := getTestPrediction(nil, nil)
+	assert.True(t, testPrediction.IsDelayed())
+}
+
+// Helpers
+func setUp() {
+	config.LoadEnv("")
+}
+
+func getTestPrediction(fixedPredictedDeparture *string, fixedPredictionDateTime *string) Prediction {
+	currentTime := time.Now().UTC()
+
+	var predictedDeparture string
+	if fixedPredictedDeparture != nil {
+		predictedDeparture = *fixedPredictedDeparture
+	} else {
+		fifteenMinutesLater := currentTime.Add(time.Minute * 15)
+		predictedDeparture = formatTimeForACTransit(fifteenMinutesLater)
+	}
+
+	var predictionDateTime string
+	if fixedPredictionDateTime != nil {
+		predictionDateTime = *fixedPredictionDateTime
+	} else {
+		predictionDateTime = formatTimeForACTransit(currentTime)
+	}
+
+	return Prediction{
+		StopID:                  "55765",
+		TripID:                  "5340689",
+		VehicleID:               "5117",
+		RouteName:               "80",
+		PredictedDelayInSeconds: "-1860",
+		PredictedDeparture:      predictedDeparture,
+		PredictionDateTime:      predictionDateTime,
+	}
 }

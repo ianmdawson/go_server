@@ -8,14 +8,15 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"time"
 )
 
-type stop struct {
+type Stop struct {
 	StopID        json.Number `json:"StopId"`
 	Name          string      `json:"Name"`
-	Latitude      json.Number `json:"Latitude"`
-	Longitude     json.Number `json:"Longitude"`
-	ScheduledTime string      `json:"ScheduledTime"`
+	Latitude      json.Number `json:"Latitude,omitempty"`
+	Longitude     json.Number `json:"Longitude,omitempty"`
+	ScheduledTime string      `json:"ScheduledTime,omitempty"`
 }
 
 type Prediction struct {
@@ -26,6 +27,41 @@ type Prediction struct {
 	PredictedDelayInSeconds json.Number `json:"PredictedDelayInSeconds"`
 	PredictedDeparture      string      `json:"PredictedDeparture"`
 	PredictionDateTime      string      `json:"PredictionDateTime"`
+}
+
+func (prediction *Prediction) TimeUntilPredictedDeparture() (*time.Duration, error) {
+	arrivalTime, err := getTimeFromACTransit(prediction.PredictedDeparture)
+	if err != nil {
+		return nil, err
+	}
+
+	currentTime := time.Now()
+	difference := arrivalTime.Sub(currentTime)
+
+	return &difference, nil
+}
+
+func (prediction *Prediction) IsDelayed() bool {
+	predictedDelay, _ := prediction.PredictedDelayInSeconds.Int64()
+	if predictedDelay != 0 {
+		return true
+	}
+	return false
+}
+
+func getTimeFromACTransit(acTransitTime string) (*time.Time, error) {
+	t, err := time.Parse("2006-01-02T15:04:05", acTransitTime)
+	loc, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		return nil, err
+	}
+
+	timeInLocation := t.In(loc)
+	return &timeInLocation, err
+}
+
+func formatTimeForACTransit(t time.Time) string {
+	return t.Format("2006-01-02T15:04:05")
 }
 
 func appendAuthToURL(URLPrefix string, testToken *string) (*url.URL, error) {
@@ -65,7 +101,7 @@ func httpRequest(u url.URL) (*[]byte, error) {
 }
 
 // GetAllStops retrieves all available stops
-func GetAllStops(URL string) (*[]stop, error) {
+func GetAllStops(URL string) (*[]Stop, error) {
 	if URL == "" {
 		URL = "https://api.actransit.org/transit/stops"
 	}
@@ -80,7 +116,7 @@ func GetAllStops(URL string) (*[]stop, error) {
 		return nil, err
 	}
 
-	var stops []stop
+	var stops []Stop
 	err = json.Unmarshal(*responseBody, &stops)
 	if err != nil {
 		return nil, err
