@@ -5,16 +5,16 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/ianmdawson/go_server/transit"
+	"github.com/ianmdawson/go_server/actransit"
 )
 
 // PredictionsPage is an page html template struct
 type PredictionsPage struct {
 	Title       string
-	Predictions []transit.Prediction
+	Predictions []actransit.Prediction
 }
 
-func compilePredictionPageFromTemplate(title string, predictions []transit.Prediction) (*template.Template, *PredictionsPage, error) {
+func compilePredictionPageFromTemplate(title string, predictions []actransit.Prediction) (*template.Template, *PredictionsPage, error) {
 	page := &PredictionsPage{Title: title, Predictions: predictions}
 	_template, err := template.ParseFiles("public/template/transit/predictionsTemplate.html")
 	if err != nil {
@@ -33,7 +33,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, status int, message st
 
 // AllTransitStopsHandler gets all transit stops then returns them
 func AllTransitStopsHandler(w http.ResponseWriter, r *http.Request) {
-	stops, err := transit.GetAllStops("")
+	stops, err := actransit.GetAllStops("")
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to retrieve AC Transit stops: "+err.Error(), http.StatusBadGateway)
 		return
@@ -49,7 +49,7 @@ func AllTransitStopsHandler(w http.ResponseWriter, r *http.Request) {
 // TransitStopHandler returns predictions for a specific stop
 func TransitStopHandler(w http.ResponseWriter, r *http.Request) {
 	stopID := r.URL.Path[len("/transit/stop/"):]
-	predictions, err := transit.GetStopPredictions(stopID, "")
+	predictions, err := actransit.GetStopPredictions(stopID, "")
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to retrieve AC Transit stops: "+err.Error(), http.StatusBadGateway)
 		return
