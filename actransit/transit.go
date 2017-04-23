@@ -143,8 +143,8 @@ func GetAllStops(URL string) (*[]Stop, error) {
 	return &stops, nil
 }
 
-// GetStopPredictions retrieves predictions for a stop by ID
-func GetStopPredictions(stopID string, URL string) (*[]Prediction, error) {
+// GetPredictionsForStop retrieves predictions for a stop by ID
+func GetPredictionsForStop(stopID string, URL string) (*[]Prediction, error) {
 	regex := regexp.MustCompile("^[0-9]+")
 	match := regex.FindAllString(stopID, 1)
 	if match == nil {

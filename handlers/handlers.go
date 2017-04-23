@@ -49,7 +49,7 @@ func AllTransitStopsHandler(w http.ResponseWriter, r *http.Request) {
 // TransitStopHandler returns predictions for a specific stop
 func TransitStopHandler(w http.ResponseWriter, r *http.Request) {
 	stopID := r.URL.Path[len("/transit/stop/"):]
-	predictions, err := actransit.GetStopPredictions(stopID, "")
+	predictions, err := actransit.GetPredictionsForStop(stopID, "")
 	if err != nil {
 		http.Error(w, "Something went wrong while trying to retrieve AC Transit stops: "+err.Error(), http.StatusBadGateway)
 		return

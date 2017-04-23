@@ -146,7 +146,7 @@ func TestGetAllStopsSuccess(t *testing.T) {
 	assert.Equal(t, expectedStop, actualStops[0], "")
 }
 
-func TestGetStopPredictions_Success(t *testing.T) {
+func TestGetPredictionsForStop_Success(t *testing.T) {
 	setUp()
 	fakeResponse := []map[string]string{
 		map[string]string{
@@ -177,7 +177,7 @@ func TestGetStopPredictions_Success(t *testing.T) {
 	defer s.Close()
 	fakeURL, _ := url.Parse(s.URL)
 
-	predictions, err := GetStopPredictions("55765", fakeURL.String())
+	predictions, err := GetPredictionsForStop("55765", fakeURL.String())
 	assert.NoError(t, err)
 
 	expectedPredictedDeparture := "2017-04-17T22:43:00"
@@ -187,8 +187,8 @@ func TestGetStopPredictions_Success(t *testing.T) {
 	assert.Equal(t, expectedPrediction, actualPredictions[1], "")
 }
 
-func TestGetStopPredictions_RejectsNonNumberStopIDs(t *testing.T) {
-	_, err := GetStopPredictions("zomgNotNumbers", "someurl")
+func TestGetPredictionsForStop_RejectsNonNumberStopIDs(t *testing.T) {
+	_, err := GetPredictionsForStop("zomgNotNumbers", "someurl")
 	assert.EqualError(t, err, "Invalid stop ID: zomgNotNumbers")
 }
 
