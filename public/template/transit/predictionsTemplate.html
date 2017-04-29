@@ -4,7 +4,7 @@
     <tr>
       <h2>Next arrival of the {{$prediction.RouteName}} line: </h2>
         {{ if $prediction.IsDelayed }}
-          <text class="delay" style="color:red;">Delayed: {{ $prediction.PredictedDelayInSeconds }}</text>
+          <text class="delay" style="color:red;">Delayed: {{ $prediction.GetFriendlyDelay.String }}</text>
         {{ end }}
         {{ $prediction.TimeUntilPredictedDeparture.String }}
     </tr>

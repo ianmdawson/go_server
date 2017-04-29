@@ -206,15 +206,31 @@ func TestPredictionTimeUntilPredictedDeparture(t *testing.T) {
 	assert.True(t, isTimeUntilAsExpected)
 }
 
-func TestIsDelayed(t *testing.T) {
+func TestPredictionIsDelayed(t *testing.T) {
 	testPrediction := getTestPrediction(nil, nil, nil)
 	assert.True(t, testPrediction.IsDelayed())
 }
 
-func TestIsDelayed_IsNotDelayed(t *testing.T) {
+func TestPredictionIsDelayed_IsNotDelayed(t *testing.T) {
 	testDelay := "0"
 	testPrediction := getTestPrediction(nil, nil, &testDelay)
 	assert.False(t, testPrediction.IsDelayed())
+}
+
+func TestPredictionGetFriendlyDelay(t *testing.T) {
+	testDelay := "65"
+	testPrediction := getTestPrediction(nil, nil, &testDelay)
+
+	expectedFriendlyDelay := time.Duration(65 * time.Second)
+	assert.Equal(t, expectedFriendlyDelay, testPrediction.GetFriendlyDelay())
+}
+
+func TestPredictionGetFriendlyDelay_Failure(t *testing.T) {
+	testDelay := ""
+	testPrediction := getTestPrediction(nil, nil, &testDelay)
+
+	expectedFriendlyDelay := time.Duration(0)
+	assert.Equal(t, expectedFriendlyDelay, testPrediction.GetFriendlyDelay())
 }
 
 // Helpers
@@ -222,6 +238,7 @@ func setUp() {
 	config.LoadEnv("")
 }
 
+// getTestPrediction test helper to create a fake prediction
 func getTestPrediction(fixedPredictedDeparture *string, fixedPredictionDateTime *string, fixedDelay *string) Prediction {
 	PST, _ := time.LoadLocation("America/Los_Angeles")
 	currentTime := time.Now().In(PST)

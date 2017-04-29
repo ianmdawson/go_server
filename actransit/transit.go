@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const aCTransitTimeFormat = "2006-01-02T15:04:05"
+
 type Stop struct {
 	StopID        json.Number `json:"StopId"`
 	Name          string      `json:"Name"`
@@ -50,11 +52,7 @@ func (prediction *Prediction) TimeUntilPredictedDeparture() (*time.Duration, err
 	return &differenceWithTruncatedSeconds, nil
 }
 
-func truncateSeconds(duration time.Duration) time.Duration {
-	return duration - (duration % time.Second)
-}
-
-// IsDelayed method returns true if the line for this prediction is delayed
+// IsDelayed returns true if the line for this prediction is delayed
 func (prediction *Prediction) IsDelayed() bool {
 	predictedDelay, _ := prediction.PredictedDelayInSeconds.Int64()
 	if predictedDelay != 0 {
@@ -63,12 +61,30 @@ func (prediction *Prediction) IsDelayed() bool {
 	return false
 }
 
+// GetFriendlyDelay returns time.Duration that the prediction is delayed
+// truncated to the nearest second
+func (prediction *Prediction) GetFriendlyDelay() time.Duration {
+	predictedDelay, _ := prediction.PredictedDelayInSeconds.Int64()
+	delayDuration := time.Duration(time.Duration(predictedDelay) * time.Second)
+	truncatedDelayDuration := truncateSeconds(delayDuration)
+
+	return truncatedDelayDuration
+}
+
+// Predictions collection of Prediction structs
+type Predictions []Prediction
+
+// Time helpers
+func truncateSeconds(duration time.Duration) time.Duration {
+	return duration - (duration % time.Second)
+}
+
 func getTimeFromACTransit(acTransitTime string) (*time.Time, error) {
 	PST, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		return nil, err
 	}
-	t, err := time.ParseInLocation("2006-01-02T15:04:05", acTransitTime, PST)
+	t, err := time.ParseInLocation(aCTransitTimeFormat, acTransitTime, PST)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +92,7 @@ func getTimeFromACTransit(acTransitTime string) (*time.Time, error) {
 }
 
 func formatTimeForACTransit(t time.Time) string {
-	return t.Format("2006-01-02T15:04:05")
+	return t.Format(aCTransitTimeFormat)
 }
 
 func appendAuthToURL(URLPrefix string, testToken *string) (*url.URL, error) {
@@ -96,7 +112,7 @@ func appendAuthToURL(URLPrefix string, testToken *string) (*url.URL, error) {
 	return _url, nil
 }
 
-// super basic client
+// super basic http client
 func httpRequest(u url.URL) (*[]byte, error) {
 	res, err := http.Get(u.String())
 	if err != nil {
