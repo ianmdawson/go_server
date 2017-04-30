@@ -96,24 +96,21 @@ func (slice Predictions) Swap(i, j int) {
 }
 
 // FilterDuplicates returns a new array of Prediction structs with duplicate
-// predictions filtered out. Duplicates are assumed to be predictions for the
-// same line with the same arrival time, for some reason this is common).
+// predictions filtered out (for some reason this is common).
 //
 // This function filters without allocating a new slice in memory. Probably not
 // necessary for this number of items, but fun nonetheless.
 func (slice Predictions) FilterDuplicates() Predictions {
 	b := slice[:0]
 	for _, prediction := range slice {
-		if !predictionsContainsSimilarPrediction(prediction, b) {
+		if !b.containsSimilarPrediction(prediction) {
 			b = append(b, prediction)
 		}
 	}
 	return b
 }
 
-// similar predictions are predictions for the same vehicle that have the same
-// expected departure time.
-func predictionsContainsSimilarPrediction(query Prediction, slice Predictions) bool {
+func (slice Predictions) containsSimilarPrediction(query Prediction) bool {
 	for _, prediction := range slice {
 		if (prediction.RouteName == query.RouteName) && (prediction.PredictedDeparture == query.PredictedDeparture) {
 			return true
