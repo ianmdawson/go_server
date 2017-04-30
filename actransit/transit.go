@@ -95,9 +95,12 @@ func (slice Predictions) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-// FilterDuplicates filters duplicate predictions, predictions for the same line
-// with the same arrival time. Filters without allocating a new slice in memory.
-// Probably not necessary for this number of items, but fun nonetheless.
+// FilterDuplicates returns a new array of Prediction structs with duplicate
+// predictions filtered out. Duplicates are assumed to be predictions for the
+// same line with the same arrival time, for some reason this is common).
+//
+// This function filters without allocating a new slice in memory. Probably not
+// necessary for this number of items, but fun nonetheless.
 func (slice Predictions) FilterDuplicates() Predictions {
 	b := slice[:0]
 	for _, prediction := range slice {
@@ -232,7 +235,9 @@ func GetPredictionsForStop(stopID string, URL string) (*Predictions, error) {
 	if err != nil {
 		return nil, err
 	}
+	predictions = predictions.FilterDuplicates()
 	sort.Sort(predictions)
+
 	return &predictions, nil
 }
 
