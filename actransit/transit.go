@@ -79,7 +79,7 @@ func (prediction *Prediction) GetFriendlyDelay() time.Duration {
 // Predictions collection of Prediction structs
 type Predictions []Prediction
 
-// Sort interface for Predictions
+// Simple sort.Interface for Predictions, sorting on predicted arrival time
 // Len returns length of Predictions slice
 func (slice Predictions) Len() int {
 	return len(slice)
