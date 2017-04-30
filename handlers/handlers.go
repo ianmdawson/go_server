@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/ianmdawson/goactransit"
+	"github.com/ianmdawson/go-actransit"
 )
 
 // PredictionsPage is an page html template struct
