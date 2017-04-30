@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -192,7 +193,7 @@ func TestGetPredictionsForStop_RejectsNonNumberStopIDs(t *testing.T) {
 	assert.EqualError(t, err, "Invalid stop ID: zomgNotNumbers")
 }
 
-func TestPredictionTimeUntilPredictedDeparture(t *testing.T) {
+func TestPrediction_TimeUntilPredictedDeparture(t *testing.T) {
 	testPrediction := getTestPrediction(nil, nil, nil)
 	timeUntil, err := testPrediction.TimeUntilPredictedDeparture()
 	assert.NoError(t, err)
@@ -206,18 +207,18 @@ func TestPredictionTimeUntilPredictedDeparture(t *testing.T) {
 	assert.True(t, isTimeUntilAsExpected)
 }
 
-func TestPredictionIsDelayed(t *testing.T) {
+func TestPrediction_IsDelayed(t *testing.T) {
 	testPrediction := getTestPrediction(nil, nil, nil)
 	assert.True(t, testPrediction.IsDelayed())
 }
 
-func TestPredictionIsDelayed_IsNotDelayed(t *testing.T) {
+func TestPrediction_IsDelayed_IsNotDelayed(t *testing.T) {
 	testDelay := "0"
 	testPrediction := getTestPrediction(nil, nil, &testDelay)
 	assert.False(t, testPrediction.IsDelayed())
 }
 
-func TestPredictionGetFriendlyDelay(t *testing.T) {
+func TestPrediction_GetFriendlyDelay(t *testing.T) {
 	testDelay := "65"
 	testPrediction := getTestPrediction(nil, nil, &testDelay)
 
@@ -225,12 +226,51 @@ func TestPredictionGetFriendlyDelay(t *testing.T) {
 	assert.Equal(t, expectedFriendlyDelay, testPrediction.GetFriendlyDelay())
 }
 
-func TestPredictionGetFriendlyDelay_Failure(t *testing.T) {
+func TestPrediction_GetFriendlyDelay_Failure(t *testing.T) {
 	testDelay := ""
 	testPrediction := getTestPrediction(nil, nil, &testDelay)
 
 	expectedFriendlyDelay := time.Duration(0)
 	assert.Equal(t, expectedFriendlyDelay, testPrediction.GetFriendlyDelay())
+}
+
+func TestPredictions_Sort(t *testing.T) {
+	currentTime := time.Now()
+	currentTimeString := formatTimeForACTransit(currentTime)
+	fifteenMinutesLater := formatTimeForACTransit(currentTime.Add(time.Minute * 15))
+	thirtyMinutesLater := formatTimeForACTransit(currentTime.Add(time.Minute * 30))
+	fortyMinutesLater := formatTimeForACTransit(currentTime.Add(time.Minute * 45))
+
+	prediction1 := getTestPrediction(&fifteenMinutesLater, &currentTimeString, nil)
+	prediction2 := getTestPrediction(&thirtyMinutesLater, &currentTimeString, nil)
+	prediction3 := getTestPrediction(&fortyMinutesLater, &currentTimeString, nil)
+
+	actualPredictions := Predictions{prediction3, prediction2, prediction1}
+	sort.Sort(actualPredictions)
+	expectedPredictions := Predictions{prediction1, prediction2, prediction3}
+
+	assert.Equal(t, expectedPredictions, actualPredictions)
+}
+
+func TestPredictions_FilterDuplicates_HasDuplicates(t *testing.T) {
+	prediction := getTestPrediction(nil, nil, nil)
+	predictions := Predictions{prediction, prediction}
+
+	filteredPredictions := predictions.FilterDuplicates()
+	assert.Equal(t, 1, filteredPredictions.Len())
+}
+
+func TestPredictions_FilterDuplicates_NoDuplicates(t *testing.T) {
+	currentTime := time.Now()
+	fiveMinutesLater := formatTimeForACTransit(currentTime.Add(5 * time.Minute))
+	fifteenMinutesLater := formatTimeForACTransit(currentTime.Add(15 * time.Minute))
+
+	prediction1 := getTestPrediction(&fiveMinutesLater, nil, nil)
+	prediction2 := getTestPrediction(&fifteenMinutesLater, nil, nil)
+	predictions := Predictions{prediction1, prediction2}
+
+	filteredPredictions := predictions.FilterDuplicates()
+	assert.Equal(t, 2, filteredPredictions.Len())
 }
 
 // Helpers

@@ -8,11 +8,14 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"time"
 )
 
 const aCTransitTimeFormat = "2006-01-02T15:04:05"
 
+// Stop model, elements in api response from
+// https://api.actransit.org/transit/stops
 type Stop struct {
 	StopID        json.Number `json:"StopId"`
 	Name          string      `json:"Name"`
@@ -21,6 +24,8 @@ type Stop struct {
 	ScheduledTime string      `json:"ScheduledTime,omitempty"`
 }
 
+// Prediction stop prediction model, elements in api response from
+// https://api.actransit.org/transit/stops/:stopId/predictions
 type Prediction struct {
 	StopID                  json.Number `json:"StopId"`
 	TripID                  json.Number `json:"TripId"`
@@ -73,6 +78,46 @@ func (prediction *Prediction) GetFriendlyDelay() time.Duration {
 
 // Predictions collection of Prediction structs
 type Predictions []Prediction
+
+// Sort interface for Predictions
+// Len returns length of Predictions slice
+func (slice Predictions) Len() int {
+	return len(slice)
+}
+
+func (slice Predictions) Less(i, j int) bool {
+	timei, _ := slice[i].TimeUntilPredictedDeparture()
+	timej, _ := slice[j].TimeUntilPredictedDeparture()
+	return *timei < *timej
+}
+
+func (slice Predictions) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
+// FilterDuplicates filters duplicate predictions, predictions for the same line
+// with the same arrival time. Filters without allocating a new slice in memory.
+// Probably not necessary for this number of items, but fun nonetheless.
+func (slice Predictions) FilterDuplicates() Predictions {
+	b := slice[:0]
+	for _, prediction := range slice {
+		if !predictionsContainsSimilarPrediction(prediction, b) {
+			b = append(b, prediction)
+		}
+	}
+	return b
+}
+
+// similar predictions are predictions for the same vehicle that have the same
+// expected departure time.
+func predictionsContainsSimilarPrediction(query Prediction, slice Predictions) bool {
+	for _, prediction := range slice {
+		if (prediction.RouteName == query.RouteName) && (prediction.PredictedDeparture == query.PredictedDeparture) {
+			return true
+		}
+	}
+	return false
+}
 
 // Time helpers
 func truncateSeconds(duration time.Duration) time.Duration {
@@ -160,7 +205,7 @@ func GetAllStops(URL string) (*[]Stop, error) {
 }
 
 // GetPredictionsForStop retrieves predictions for a stop by ID
-func GetPredictionsForStop(stopID string, URL string) (*[]Prediction, error) {
+func GetPredictionsForStop(stopID string, URL string) (*Predictions, error) {
 	regex := regexp.MustCompile("^[0-9]+")
 	match := regex.FindAllString(stopID, 1)
 	if match == nil {
@@ -182,12 +227,12 @@ func GetPredictionsForStop(stopID string, URL string) (*[]Prediction, error) {
 		return nil, err
 	}
 
-	var predictions []Prediction
+	var predictions Predictions
 	err = json.Unmarshal(*responseBody, &predictions)
 	if err != nil {
 		return nil, err
 	}
-
+	sort.Sort(predictions)
 	return &predictions, nil
 }
 
